@@ -1,0 +1,91 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:KanbanNW"
+             xmlns:conv="using:KanbanNW.Converters"
+             xmlns:sys="using:System"
+             x:Class="KanbanNW.App"
+             RequestedThemeVariant="Default">
+
+    <Application.Resources>
+        <!-- Font sizes (editable via Appearance) -->
+        <sys:Double x:Key="TabFontSize">17</sys:Double>
+        <sys:Double x:Key="ColumnHeaderFontSize">19</sys:Double>
+        <sys:Double x:Key="TaskTitleFontSize">18</sys:Double>
+        <sys:Double x:Key="TaskDescFontSize">16</sys:Double>
+        <sys:Double x:Key="TaskButtonFontSize">17</sys:Double>
+        <sys:Double x:Key="TypeBadgeFontSize">14</sys:Double>
+        <sys:Double x:Key="DueDateFontSize">14</sys:Double>
+        <sys:Double x:Key="AddTaskBtnFontSize">14</sys:Double>
+        <sys:Double x:Key="EmptyQueueBtnFontSize">13</sys:Double>
+        <sys:Double x:Key="TaskEditorFontSize">16</sys:Double>
+        <sys:Double x:Key="BaseFontSize">14</sys:Double>
+        <sys:String x:Key="AppFontFamily">Arial</sys:String>
+        <!-- Theme-aware color brushes (light defaults; swapped in code) -->
+        <SolidColorBrush x:Key="WindowBackground">#FAFAFA</SolidColorBrush>
+        <SolidColorBrush x:Key="MenuBarBackground">#2C3E50</SolidColorBrush>
+        <SolidColorBrush x:Key="TabBarColor">#34495E</SolidColorBrush>
+        <SolidColorBrush x:Key="ColumnBackground">#7777777</SolidColorBrush>
+        <SolidColorBrush x:Key="TaskBackground">White</SolidColorBrush>
+        <SolidColorBrush x:Key="ColumnHeaderBgCol">#EEEEEEE</SolidColorBrush>
+        <SolidColorBrush x:Key="ColumnHeaderForeground">Black</SolidColorBrush>
+        <SolidColorBrush x:Key="TaskTitleForeground">Black</SolidColorBrush>
+        <SolidColorBrush x:Key="BorderColor">#E0E0E0</SolidColorBrush>
+        <SolidColorBrush x:Key="SubtleBorderColor">#F0F0F0</SolidColorBrush>
+        <SolidColorBrush x:Key="HintForeground">#888888</SolidColorBrush>
+        <conv:TypeToColorConverter x:Key="TypeToColor"/>
+        <conv:TypeToColorNameConverter x:Key="TypeToColorName"/>
+        <conv:BoolToStrikethroughConverter x:Key="BoolToStrikethrough"/>
+        <conv:InverseBoolConverter x:Key="InverseBool"/>
+        <conv:StringNotEmptyConverter x:Key="StringNotEmpty"/>
+        <conv:ColumnHeaderBgConverter x:Key="ColumnHeaderBg"/>
+        <conv:DueDateBackgroundConverter x:Key="DueDateBackground"/>
+        <conv:NotNullConverter x:Key="NotNullConverter"/>
+        <conv:DueDateToStringConverter x:Key="DueDateToString"/>
+        <conv:EditNewTitleConverter x:Key="EditNewTitle"/>
+        <conv:DescriptionPreviewConverter x:Key="DescriptionPreview"/>
+        <conv:IsDeletedColumnConverter x:Key="IsDeletedColumn"/>
+        <conv:IsNotDeletedColumnConverter x:Key="IsNotDeletedColumn"/>
+        <conv:TypeToDisplayNameConverter x:Key="TypeToDisplayName"/>
+        <conv:CanAddTaskConverter x:Key="CanAddTaskConverter"/>
+        <conv:TabBackgroundConverter x:Key="TabBackgroundConverter"/>
+        <conv:StringToBrushConverter x:Key="StringToBrush"/>
+        <conv:BoolToCheckmarkConverter x:Key="BoolToCheckmark"/>
+    </Application.Resources>
+
+    <Application.DataTemplates>
+        <local:ViewLocator />
+    </Application.DataTemplates>
+
+    <Application.Styles>
+        <FluentTheme/>
+        <StyleInclude Source="avares://Avalonia.Controls.ColorPicker/Themes/Fluent/Fluent.xaml" />
+
+        <!-- Font family for all controls -->
+        <Style Selector=":is(Control)">
+            <Setter Property="TextElement.FontFamily" Value="{DynamicResource AppFontFamily}" />
+        </Style>
+        
+        <!-- Column header: TextBlock styling -->
+        <Style Selector="TextBlock.column-header">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource ColumnHeaderForeground}"/>
+        </Style>
+        <!-- Column header: Button styling -->
+        <Style Selector="Button.column-header">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource ColumnHeaderForeground}"/>
+        </Style>
+
+        <!-- Task column card styling (used on Borders) -->
+        <Style Selector="Border.task-column">
+            <Setter Property="Background" Value="{DynamicResource ColumnBackground}"/>
+        </Style>
+
+        <!-- Task title text styling -->
+        <Style Selector="TextBlock.task-title">
+            <Setter Property="Foreground" Value="{DynamicResource TaskTitleForeground}"/>
+        </Style>
+
+        <!-- Text and button colors use FluentTheme's built-in Light/Dark palette -->
+    </Application.Styles>
+</Application>
