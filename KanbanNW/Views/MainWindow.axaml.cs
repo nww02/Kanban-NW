@@ -143,6 +143,16 @@ public partial class MainWindow : Window
         }
     }
 
+    private async void OnHelpClick(object? sender, RoutedEventArgs e)
+    {
+        await HelpWindow.ShowAsync(this);
+    }
+
+    private async void OnAboutClick(object? sender, RoutedEventArgs e)
+    {
+        await AboutWindow.ShowAsync(this);
+    }
+
     private void OnProjectTabClick(object? sender, PointerPressedEventArgs e)
     {
         if (sender is Border border && border.Tag is int projectId)

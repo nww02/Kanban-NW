@@ -26,6 +26,13 @@
                           Icon="{Binding ShowDeletedTasks, Converter={StaticResource BoolToCheckmark}}"/>
                 <MenuItem Header="_Appearance..." Classes="submenu-item" Click="OnAppearanceClick"/>
             </MenuItem>
+            <!-- Spacer to push Help menu to the right -->
+            <TextBlock/>
+            <MenuItem Header="_Help" Classes="menu-header" HorizontalAlignment="Right">
+                <MenuItem Header="_Help" Classes="submenu-item" Click="OnHelpClick"/>
+                <Separator/>
+                <MenuItem Header="_About" Classes="submenu-item" Click="OnAboutClick"/>
+            </MenuItem>
         </Menu>
 
         <Border DockPanel.Dock="Top" Padding="0" Background="{DynamicResource TabBarColor}">
