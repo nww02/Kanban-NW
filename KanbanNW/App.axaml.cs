@@ -73,8 +73,10 @@ public partial class App : Application
         var isDark = theme == ThemeVariant.Dark;
 
         ReplaceBrush(res, "WindowBackground", isDark ? "#1E1E1E" : "#FAFAFA");
-        ReplaceBrush(res, "MenuBarBackground", isDark ? "#1A1A1A" : "#2C3E50");
-        ReplaceBrush(res, "TabBarColor", isDark ? "#252525" : "#34495E");
+        ReplaceBrush(res, "MenuBarBackground", isDark ? "#1A1A1A" : "#E8E8E8");
+        ReplaceBrush(res, "TabBarColor", isDark ? "#252525" : "#D5D5D5");
+        ReplaceBrush(res, "MenuForeground", isDark ? "#E0E0E0" : "#222222");
+        ReplaceBrush(res, "TabTextForeground", isDark ? "#E0E0E0" : "#222222");
         ReplaceBrush(res, "ColumnBackground", isDark ? "#2D2D2D" : "#F0F2F5");
         ReplaceBrush(res, "TaskBackground", isDark ? "#383838" : "White");
         ReplaceBrush(res, "ColumnHeaderBgCol", isDark ? "#2D2D2D" : "#E3F2FD");

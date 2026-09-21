@@ -45,7 +45,8 @@
                                     Tag="{Binding Id}"
                                     Cursor="Hand">
                                 <TextBlock Text="{Binding Name}" FontSize="{DynamicResource TabFontSize}" FontWeight="600"
-                                           Classes="tab-text"/>
+                                           Classes="tab-text"
+                                           Foreground="{Binding Color, Converter={StaticResource ContrastText}}"/>
                             </Border>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
@@ -57,7 +58,8 @@
                       VerticalScrollBarVisibility="Disabled"
                       DragDrop.AllowDrop="True"
                       DragDrop.DragOver="OnColumnDragOver">
-            <ItemsControl ItemsSource="{Binding Columns}"
+            <ItemsControl x:Name="ColumnsItemsControl"
+                          ItemsSource="{Binding Columns}"
                           Margin="16,16"
                           DragDrop.AllowDrop="True"
                           DragDrop.DragOver="OnColumnDragOver">
@@ -123,10 +125,20 @@
                                                     PointerPressed="OnTaskPointerPressed"
                                                     HorizontalAlignment="Stretch">
                                                 <Grid ColumnDefinitions="8,*">
+                                                    <!-- Placeholder view: empty bordered box when IsDragPlaceholder -->
+                                                    <Border Grid.ColumnSpan="2"
+                                                            IsVisible="{Binding IsDragPlaceholder}"
+                                                            BorderBrush="#4A90D9" BorderThickness="2"
+                                                            CornerRadius="6"
+                                                            Height="{Binding PlaceholderHeight}"
+                                                            Background="#E0E0E0" Opacity="0.7"/>
+                                                    <!-- Color strip -->
                                                     <Border Grid.Column="0"
                                                             Background="{Binding Type, Converter={StaticResource TypeToColor}}"
-                                                            CornerRadius="6,0,0,6"/>
-                                                    <DockPanel Grid.Column="1" Margin="10,8,8,8">
+                                                            CornerRadius="6,0,0,6"
+                                                            IsVisible="{Binding IsDragPlaceholder, Converter={StaticResource InverseBool}}"/>
+                                                    <DockPanel Grid.Column="1" Margin="10,8,8,8"
+                                                        IsVisible="{Binding IsDragPlaceholder, Converter={StaticResource InverseBool}}">
                                                         <TextBlock DockPanel.Dock="Top"
                                                                    Text="{Binding Title}" FontWeight="700"
                                                                    FontSize="{DynamicResource TaskTitleFontSize}" TextWrapping="Wrap"

@@ -291,6 +291,37 @@ public class StringToBrushConverter : IValueConverter
 }
 
 /// <summary>
+/// Returns a contrasting foreground brush (black or white) for a given
+/// hex color string, based on perceived luminance.
+/// Used to keep tab text legible regardless of the user-chosen tab color.
+/// </summary>
+public class ContrastTextColorConverter : IValueConverter
+{
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is string hex && !string.IsNullOrWhiteSpace(hex))
+        {
+            try
+            {
+                var c = Color.Parse(hex);
+                var luminance = 0.299 * c.R + 0.587 * c.G + 0.114 * c.B;
+                return new SolidColorBrush(luminance < 140 ? Colors.White : Colors.Black);
+            }
+            catch
+            {
+                // fall through
+            }
+        }
+        return new SolidColorBrush(Colors.Black);
+    }
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+/// <summary>
 /// Returns "✓" for true, null for false — used for menu checkmarks.
 /// </summary>
 public class BoolToCheckmarkConverter : IValueConverter

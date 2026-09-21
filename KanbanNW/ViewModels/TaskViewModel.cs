@@ -38,6 +38,12 @@ public partial class TaskViewModel : ViewModelBase
     [ObservableProperty]
     private int _estimatedDays = 1;
 
+    [ObservableProperty]
+    private bool _isDragPlaceholder;
+
+    [ObservableProperty]
+    private double _placeholderHeight = 60;
+
     public Avalonia.Media.ISolidColorBrush? DueDateColor
     {
         get

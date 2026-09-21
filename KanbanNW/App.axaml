@@ -22,8 +22,10 @@
         <sys:String x:Key="AppFontFamily">Arial</sys:String>
         <!-- Theme-aware color brushes (light defaults; swapped in code) -->
         <SolidColorBrush x:Key="WindowBackground">#FAFAFA</SolidColorBrush>
-        <SolidColorBrush x:Key="MenuBarBackground">#2C3E50</SolidColorBrush>
-        <SolidColorBrush x:Key="TabBarColor">#34495E</SolidColorBrush>
+        <SolidColorBrush x:Key="MenuBarBackground">#E8E8E8</SolidColorBrush>
+        <SolidColorBrush x:Key="TabBarColor">#D5D5D5</SolidColorBrush>
+        <SolidColorBrush x:Key="MenuForeground">#222222</SolidColorBrush>
+        <SolidColorBrush x:Key="TabTextForeground">#222222</SolidColorBrush>
         <SolidColorBrush x:Key="ColumnBackground">#7777777</SolidColorBrush>
         <SolidColorBrush x:Key="TaskBackground">White</SolidColorBrush>
         <SolidColorBrush x:Key="ColumnHeaderBgCol">#EEEEEEE</SolidColorBrush>
@@ -49,6 +51,7 @@
         <conv:CanAddTaskConverter x:Key="CanAddTaskConverter"/>
         <conv:TabBackgroundConverter x:Key="TabBackgroundConverter"/>
         <conv:StringToBrushConverter x:Key="StringToBrush"/>
+        <conv:ContrastTextColorConverter x:Key="ContrastText"/>
         <conv:BoolToCheckmarkConverter x:Key="BoolToCheckmark"/>
     </Application.Resources>
 
@@ -86,6 +89,23 @@
             <Setter Property="Foreground" Value="{DynamicResource TaskTitleForeground}"/>
         </Style>
 
-        <!-- Text and button colors use FluentTheme's built-in Light/Dark palette -->
+        <!-- Menu bar items: foreground follows theme including hover/press states -->
+        <Style Selector="MenuItem.menu-header">
+            <Setter Property="Foreground" Value="{DynamicResource MenuForeground}"/>
+        </Style>
+        <Style Selector="MenuItem.menu-header /template/ ContentPresenter#PART_HeaderPresenter">
+            <Setter Property="Foreground" Value="{DynamicResource MenuForeground}"/>
+        </Style>
+        <Style Selector="MenuItem.menu-header:pointerover">
+            <Setter Property="Foreground" Value="{DynamicResource MenuForeground}"/>
+        </Style>
+        <Style Selector="MenuItem.menu-header:pointerover /template/ ContentPresenter#PART_HeaderPresenter">
+            <Setter Property="Foreground" Value="{DynamicResource MenuForeground}"/>
+        </Style>
+
+        <!-- Tab bar text: foreground follows theme -->
+        <Style Selector="TextBlock.tab-text">
+            <Setter Property="Foreground" Value="{DynamicResource TabTextForeground}"/>
+        </Style>
     </Application.Styles>
 </Application>
