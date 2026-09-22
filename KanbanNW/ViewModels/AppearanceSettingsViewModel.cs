@@ -1,14 +1,19 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace KanbanNW.ViewModels;
 
+/// <summary>
+/// ViewModel for the Appearance settings dialog (Config -> Appearance).
+/// Manages theme, font family, font sizes, and presets.
+/// </summary>
 public partial class AppearanceSettingsViewModel : ViewModelBase
 {
-    // --- Font size properties ---
+    // Font size properties (bound to text boxes)
     [ObservableProperty] private int _tabFontSize;
     [ObservableProperty] private int _columnHeaderFontSize;
     [ObservableProperty] private int _taskTitleFontSize;
@@ -21,23 +26,18 @@ public partial class AppearanceSettingsViewModel : ViewModelBase
     [ObservableProperty] private int _taskEditorFontSize;
     [ObservableProperty] private int _baseFontSize;
 
-    // --- Font family ---
+    // Font family
     [ObservableProperty] private string _selectedFont = "Inter";
 
-    // --- Theme ---
+    // Theme
     [ObservableProperty] private string _selectedTheme = "Light";
     [ObservableProperty] private string _selectedFontPreset = "Medium";
 
     public string[] Themes { get; } = { "System", "Light", "Dark" };
     public string[] FontPresets { get; } = { "Small", "Medium", "Large" };
-
     public string[] Fonts { get; } = GetSystemFonts();
 
-    partial void OnSelectedThemeChanged(string value)
-    {
-        ApplySettings();
-    }
-
+    // Font preset definitions (each array has 11 sizes matching the order above)
     private static readonly Dictionary<string, int[]> FontPresetValues = new()
     {
         ["Small"]  = new[] { 14, 14, 12, 11, 11, 11, 11, 11, 11, 11, 11 },
@@ -45,6 +45,10 @@ public partial class AppearanceSettingsViewModel : ViewModelBase
         ["Large"]  = new[] { 22, 22, 20, 18, 18, 18, 18, 18, 18, 18, 18 }
     };
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AppearanceSettingsViewModel"/> class.
+    /// </summary>
+    /// <param name="currentValues">Current settings loaded from database.</param>
     public AppearanceSettingsViewModel(Dictionary<string, object> currentValues)
     {
         TabFontSize             = GetInt(currentValues, "TabFontSize", 18);
@@ -64,6 +68,17 @@ public partial class AppearanceSettingsViewModel : ViewModelBase
         SelectedFontPreset = currentValues.TryGetValue("FontPreset", out var fp) ? fp.ToString() ?? "Medium" : "Medium";
     }
 
+    /// <summary>
+    /// Applies the selected theme immediately (for live preview in the dialog).
+    /// </summary>
+    partial void OnSelectedThemeChanged(string value)
+    {
+        ApplySettings();
+    }
+
+    /// <summary>
+    /// Applies the selected theme immediately (for live preview in the dialog).
+    /// </summary>
     public void ApplySettings()
     {
         var theme = SelectedTheme?.ToLower() switch
@@ -76,6 +91,9 @@ public partial class AppearanceSettingsViewModel : ViewModelBase
         App.ApplyThemeResources(theme);
     }
 
+    /// <summary>
+    /// Applies font preset values when user selects a preset.
+    /// </summary>
     partial void OnSelectedFontPresetChanged(string value)
     {
         if (FontPresetValues.TryGetValue(value, out var sizes))
@@ -94,6 +112,10 @@ public partial class AppearanceSettingsViewModel : ViewModelBase
         }
     }
 
+    /// <summary>
+    /// Gets all available system fonts plus built-in defaults.
+    /// </summary>
+    /// <returns>An array of font family names.</returns>
     private static string[] GetSystemFonts()
     {
         var fonts = new List<string> { "Inter", "Arial" };
@@ -111,6 +133,13 @@ public partial class AppearanceSettingsViewModel : ViewModelBase
         return fonts.ToArray();
     }
 
+    /// <summary>
+    /// Safely extracts an integer from the settings dictionary.
+    /// </summary>
+    /// <param name="dict">The settings dictionary.</param>
+    /// <param name="key">The key to look up.</param>
+    /// <param name="def">Default value if not found or invalid.</param>
+    /// <returns>The integer value or default.</param>
     private static int GetInt(Dictionary<string, object> dict, string key, int def)
     {
         if (dict.TryGetValue(key, out var val) && val is double d)
@@ -118,6 +147,10 @@ public partial class AppearanceSettingsViewModel : ViewModelBase
         return def;
     }
 
+    /// <summary>
+    /// Returns all current settings as a dictionary for saving to database.
+    /// </summary>
+    /// <returns>A dictionary of all settings with their current values.</returns>
     public Dictionary<string, object> GetValues()
     {
         return new Dictionary<string, object>
@@ -139,6 +172,9 @@ public partial class AppearanceSettingsViewModel : ViewModelBase
         };
     }
 
+    /// <summary>
+    /// Resets all settings to defaults.
+    /// </summary>
     public void ResetToDefaults()
     {
         SelectedFontPreset = "Medium";

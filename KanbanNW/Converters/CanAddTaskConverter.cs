@@ -9,6 +9,14 @@ namespace KanbanNW.Converters;
 /// </summary>
 public class CanAddTaskConverter : IValueConverter
 {
+    /// <summary>
+    /// Converts a column name to a boolean indicating if tasks can be added.
+    /// </summary>
+    /// <param name="value">The column name.</param>
+    /// <param name="targetType">The target type.</param>
+    /// <param name="parameter">Optional parameter.</param>
+    /// <param name="culture">The culture info.</param>
+    /// <returns>True if tasks can be added, false otherwise.</returns>
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         if (value is string name)
@@ -16,6 +24,9 @@ public class CanAddTaskConverter : IValueConverter
         return true;
     }
 
+    /// <summary>
+    /// Not implemented.
+    /// </summary>
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         throw new NotImplementedException();
@@ -27,6 +38,14 @@ public class CanAddTaskConverter : IValueConverter
 /// </summary>
 public class TabBackgroundConverter : IValueConverter
 {
+    /// <summary>
+    /// Converts a project ID to a background brush.
+    /// </summary>
+    /// <param name="value">The tab's project ID.</param>
+    /// <param name="targetType">The target type.</param>
+    /// <param name="parameter">The current project ID.</param>
+    /// <param name="culture">The culture info.</param>
+    /// <returns>A brush for the tab background.</returns>
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         if (value is int tabProjectId && parameter is int currentProjectId)

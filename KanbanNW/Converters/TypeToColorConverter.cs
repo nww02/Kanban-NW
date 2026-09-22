@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
@@ -6,54 +7,30 @@ using KanbanNW.Models;
 
 namespace KanbanNW.Converters;
 
+/// <summary>
+/// Converts a TaskType enum to a SolidColorBrush for UI rendering.
+/// </summary>
 public class TypeToColorConverter : IValueConverter
 {
+    private static readonly Dictionary<TaskType, Color> _colors = new()
+    {
+        [TaskType.None]      = Color.Parse("#FFFFFF"),
+        [TaskType.Red]       = Color.Parse("#EF5350"),
+        [TaskType.Orange]    = Color.Parse("#FF7043"),
+        [TaskType.Yellow]    = Color.Parse("#FFCA28"),
+        [TaskType.Green]     = Color.Parse("#66BB6A"),
+        [TaskType.Blue]      = Color.Parse("#42A5F5"),
+        [TaskType.Purple]    = Color.Parse("#AB47BC"),
+        [TaskType.Black]     = Color.Parse("#455A64")
+    };
+
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         if (value is TaskType type)
         {
-            return type switch
-            {
-                Models.TaskType.None => new SolidColorBrush(Color.Parse("#FFFFFF")),
-                Models.TaskType.Red => new SolidColorBrush(Color.Parse("#EF5350")),
-                Models.TaskType.Orange => new SolidColorBrush(Color.Parse("#FF7043")),
-                Models.TaskType.Yellow => new SolidColorBrush(Color.Parse("#FFCA28")),
-                Models.TaskType.Green => new SolidColorBrush(Color.Parse("#66BB6A")),
-                Models.TaskType.Blue => new SolidColorBrush(Color.Parse("#42A5F5")),
-                Models.TaskType.Purple => new SolidColorBrush(Color.Parse("#AB47BC")),
-                Models.TaskType.Black => new SolidColorBrush(Color.Parse("#455A64")),
-                _ => new SolidColorBrush(Color.Parse("#FFFFFF"))
-            };
+            return new SolidColorBrush(_colors.TryGetValue(type, out var c) ? c : Colors.White);
         }
-        return new SolidColorBrush(Color.Parse("#FFFFFF"));
-    }
-
-    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
-    {
-        throw new NotImplementedException();
-    }
-}
-
-public class TypeToColorNameConverter : IValueConverter
-{
-    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
-    {
-        if (value is TaskType type)
-        {
-            return type switch
-            {
-                Models.TaskType.None => "#FFFFFF",
-                Models.TaskType.Red => "#EF5350",
-                Models.TaskType.Orange => "#FF7043",
-                Models.TaskType.Yellow => "#FFCA28",
-                Models.TaskType.Green => "#66BB6A",
-                Models.TaskType.Blue => "#42A5F5",
-                Models.TaskType.Purple => "#AB47BC",
-                Models.TaskType.Black => "#455A64",
-                _ => "#42A5F5"
-            };
-        }
-        return "#42A5F5";
+        return new SolidColorBrush(Colors.White);
     }
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
@@ -63,7 +40,39 @@ public class TypeToColorNameConverter : IValueConverter
 }
 
 /// <summary>
-/// Returns a strikethrough TextDecorationCollection when value is true, empty otherwise.
+/// Converts a TaskType enum to its hex color string (for ColorPicker).
+/// </summary>
+public class TypeToColorNameConverter : IValueConverter
+{
+    private static readonly Dictionary<TaskType, string> _colors = new()
+    {
+        [TaskType.None]      = "#FFFFFF",
+        [TaskType.Red]       = "#EF5350",
+        [TaskType.Orange]    = "#FF7043",
+        [TaskType.Yellow]    = "#FFCA28",
+        [TaskType.Green]     = "#66BB6A",
+        [TaskType.Blue]      = "#42A5F5",
+        [TaskType.Purple]    = "#AB47BC",
+        [TaskType.Black]     = "#455A64"
+    };
+
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is TaskType type)
+        {
+            return _colors.TryGetValue(type, out var c) ? c : "#FFFFFF";
+        }
+        return "#FFFFFF";
+    }
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+/// <summary>
+/// Returns a strikethrough TextDecoration when the task is complete.
 /// </summary>
 public class BoolToStrikethroughConverter : IValueConverter
 {
@@ -85,6 +94,9 @@ public class BoolToStrikethroughConverter : IValueConverter
     }
 }
 
+/// <summary>
+/// Inverts a boolean value.
+/// </summary>
 public class InverseBoolConverter : IValueConverter
 {
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
@@ -100,21 +112,9 @@ public class InverseBoolConverter : IValueConverter
     }
 }
 
-public class EditNewTitleConverter : IValueConverter
-{
-    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
-    {
-        if (value is bool isEditing && isEditing)
-            return "Edit Task";
-        return "New Task";
-    }
-
-    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
-    {
-        throw new NotImplementedException();
-    }
-}
-
+/// <summary>
+/// Returns true if a string is not null or whitespace.
+/// </summary>
 public class StringNotEmptyConverter : IValueConverter
 {
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
@@ -130,6 +130,9 @@ public class StringNotEmptyConverter : IValueConverter
     }
 }
 
+/// <summary>
+/// Returns a background brush for column headers based on whether they're system columns.
+/// </summary>
 public class ColumnHeaderBgConverter : IValueConverter
 {
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
@@ -145,6 +148,9 @@ public class ColumnHeaderBgConverter : IValueConverter
     }
 }
 
+/// <summary>
+/// Returns a background brush for due dates based on urgency.
+/// </summary>
 public class DueDateBackgroundConverter : IValueConverter
 {
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
@@ -164,6 +170,9 @@ public class DueDateBackgroundConverter : IValueConverter
     }
 }
 
+/// <summary>
+/// Returns true if the value is not null.
+/// </summary>
 public class NotNullConverter : IValueConverter
 {
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
@@ -177,6 +186,9 @@ public class NotNullConverter : IValueConverter
     }
 }
 
+/// <summary>
+/// Converts a DateTimeOffset? to a short date string (yyyy-MM-dd).
+/// </summary>
 public class DueDateToStringConverter : IValueConverter
 {
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
@@ -193,7 +205,29 @@ public class DueDateToStringConverter : IValueConverter
 }
 
 /// <summary>
-/// Returns the first ~80 characters of a string for card preview.
+/// Returns "Edit Task" or "New Task" based on whether we're editing.
+/// </summary>
+public class EditNewTitleConverter : IValueConverter
+{
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is bool isEditing && isEditing)
+            return "Edit Task";
+        return "New Task";
+    }
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is bool isEditing && isEditing)       
+        return "New Task";
+  
+            return "Edit Task";
+
+    }
+}
+
+/// <summary>
+/// Returns a preview of the description (first ~80 chars with ellipsis).
 /// </summary>
 public class DescriptionPreviewConverter : IValueConverter
 {
@@ -246,7 +280,7 @@ public class IsNotDeletedColumnConverter : IValueConverter
 }
 
 /// <summary>
-/// Converts a TaskType enum to its user-configured display name.
+/// Converts a TaskType enum to its custom display name (from cache).
 /// </summary>
 public class TypeToDisplayNameConverter : IValueConverter
 {
@@ -264,7 +298,7 @@ public class TypeToDisplayNameConverter : IValueConverter
 }
 
 /// <summary>
-/// Converts a hex color string (e.g. "#2C3E50") to an IBrush for Border.Background bindings.
+/// Converts a hex color string (e.g. "#2C3E50") to a SolidColorBrush for UI bindings.
 /// </summary>
 public class StringToBrushConverter : IValueConverter
 {
@@ -291,9 +325,8 @@ public class StringToBrushConverter : IValueConverter
 }
 
 /// <summary>
-/// Returns a contrasting foreground brush (black or white) for a given
-/// hex color string, based on perceived luminance.
-/// Used to keep tab text legible regardless of the user-chosen tab color.
+/// Returns a contrasting foreground brush (black or white) for a given hex color.
+/// Uses perceived luminance: returns White for dark colors, Black for light colors.
 /// </summary>
 public class ContrastTextColorConverter : IValueConverter
 {
@@ -304,8 +337,9 @@ public class ContrastTextColorConverter : IValueConverter
             try
             {
                 var c = Color.Parse(hex);
+                // Perceived luminance formula: 0.299R + 0.587G + 0.114B
                 var luminance = 0.299 * c.R + 0.587 * c.G + 0.114 * c.B;
-                return new SolidColorBrush(luminance < 140 ? Colors.White : Colors.Black);
+                return new SolidColorBrush(luminance < 128 ? Colors.White : Colors.Black);
             }
             catch
             {

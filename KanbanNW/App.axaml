@@ -7,7 +7,7 @@
              RequestedThemeVariant="Default">
 
     <Application.Resources>
-        <!-- Font sizes (editable via Appearance) -->
+        <!-- Font sizes (editable via Appearance settings window) -->
         <sys:Double x:Key="TabFontSize">17</sys:Double>
         <sys:Double x:Key="ColumnHeaderFontSize">19</sys:Double>
         <sys:Double x:Key="TaskTitleFontSize">18</sys:Double>
@@ -20,20 +20,23 @@
         <sys:Double x:Key="TaskEditorFontSize">16</sys:Double>
         <sys:Double x:Key="BaseFontSize">14</sys:Double>
         <sys:String x:Key="AppFontFamily">Arial</sys:String>
-        <!-- Theme-aware color brushes (light defaults; swapped in code) -->
+
+        <!-- Theme-aware color brushes (light defaults; swapped at runtime by App.ApplyThemeResources) -->
         <SolidColorBrush x:Key="WindowBackground">#FAFAFA</SolidColorBrush>
         <SolidColorBrush x:Key="MenuBarBackground">#E8E8E8</SolidColorBrush>
         <SolidColorBrush x:Key="TabBarColor">#D5D5D5</SolidColorBrush>
         <SolidColorBrush x:Key="MenuForeground">#222222</SolidColorBrush>
         <SolidColorBrush x:Key="TabTextForeground">#222222</SolidColorBrush>
-        <SolidColorBrush x:Key="ColumnBackground">#7777777</SolidColorBrush>
+        <SolidColorBrush x:Key="ColumnBackground">#F0F2F5</SolidColorBrush>
         <SolidColorBrush x:Key="TaskBackground">White</SolidColorBrush>
-        <SolidColorBrush x:Key="ColumnHeaderBgCol">#EEEEEEE</SolidColorBrush>
+        <SolidColorBrush x:Key="ColumnHeaderBgCol">#E3F2FD</SolidColorBrush>
         <SolidColorBrush x:Key="ColumnHeaderForeground">Black</SolidColorBrush>
         <SolidColorBrush x:Key="TaskTitleForeground">Black</SolidColorBrush>
         <SolidColorBrush x:Key="BorderColor">#E0E0E0</SolidColorBrush>
         <SolidColorBrush x:Key="SubtleBorderColor">#F0F0F0</SolidColorBrush>
         <SolidColorBrush x:Key="HintForeground">#888888</SolidColorBrush>
+
+        <!-- Converters used throughout the application -->
         <conv:TypeToColorConverter x:Key="TypeToColor"/>
         <conv:TypeToColorNameConverter x:Key="TypeToColorName"/>
         <conv:BoolToStrikethroughConverter x:Key="BoolToStrikethrough"/>
@@ -56,40 +59,41 @@
     </Application.Resources>
 
     <Application.DataTemplates>
+        <!-- Maps ViewModels to their corresponding Views by naming convention -->
         <local:ViewLocator />
     </Application.DataTemplates>
 
     <Application.Styles>
+        <!-- FluentTheme provides built-in Light/Dark variants for standard controls -->
         <FluentTheme/>
         <StyleInclude Source="avares://Avalonia.Controls.ColorPicker/Themes/Fluent/Fluent.xaml" />
 
-        <!-- Font family for all controls -->
+        <!-- Global font family applied to all controls -->
         <Style Selector=":is(Control)">
             <Setter Property="TextElement.FontFamily" Value="{DynamicResource AppFontFamily}" />
         </Style>
-        
-        <!-- Column header: TextBlock styling -->
+
+        <!-- Column header styling: used on TextBlock and Button in column headers -->
         <Style Selector="TextBlock.column-header">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{DynamicResource ColumnHeaderForeground}"/>
         </Style>
-        <!-- Column header: Button styling -->
         <Style Selector="Button.column-header">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{DynamicResource ColumnHeaderForeground}"/>
         </Style>
 
-        <!-- Task column card styling (used on Borders) -->
+        <!-- Task column card background (applied to Border elements) -->
         <Style Selector="Border.task-column">
             <Setter Property="Background" Value="{DynamicResource ColumnBackground}"/>
         </Style>
 
-        <!-- Task title text styling -->
+        <!-- Task title text color (follows theme) -->
         <Style Selector="TextBlock.task-title">
             <Setter Property="Foreground" Value="{DynamicResource TaskTitleForeground}"/>
         </Style>
 
-        <!-- Menu bar items: foreground follows theme including hover/press states -->
+        <!-- Menu bar header items: foreground follows theme including hover states -->
         <Style Selector="MenuItem.menu-header">
             <Setter Property="Foreground" Value="{DynamicResource MenuForeground}"/>
         </Style>

@@ -6,13 +6,25 @@ using KanbanNW.ViewModels;
 
 namespace KanbanNW.Views;
 
+/// <summary>
+/// Dialog for managing columns (Config -> Columns).
+/// Supports add/rename/delete with Save/Cancel pattern.
+/// </summary>
 public partial class ColumnsEditorWindow : Window
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ColumnsEditorWindow"/> class.
+    /// </summary>
     public ColumnsEditorWindow()
     {
         InitializeComponent();
     }
 
+    /// <summary>
+    /// Shows the Columns Editor dialog.
+    /// </summary>
+    /// <param name="owner">The owner window for modal dialog.</param>
+    /// <param name="projectId">The ID of the project whose columns to edit.</param>
     public static async Task ShowAsync(Window owner, int projectId)
     {
         var db = new KanbanDbContext();

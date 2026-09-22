@@ -5,11 +5,19 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Styling;
+using KanbanNW.Data;
+using KanbanNW.ViewModels;
 
 namespace KanbanNW.Views;
 
+/// <summary>
+/// Dialog for configuring appearance settings (theme, fonts, font sizes).
+/// </summary>
 public partial class AppearanceSettingsWindow : Window
 {
+    /// <summary>
+    /// Default values for all settings (used when not found in database).
+    /// </summary>
     private static readonly Dictionary<string, object> DefaultValues = new()
     {
         ["TabFontSize"] = 18.0, ["ColumnHeaderFontSize"] = 18.0, ["TaskTitleFontSize"] = 16.0,
@@ -20,11 +28,19 @@ public partial class AppearanceSettingsWindow : Window
         ["Theme"] = "Light", ["FontPreset"] = "Medium"
     };
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AppearanceSettingsWindow"/> class.
+    /// </summary>
     public AppearanceSettingsWindow()
     {
         InitializeComponent();
     }
 
+    /// <summary>
+    /// Loads all settings from the database, using defaults for missing values.
+    /// </summary>
+    /// <param name="db">The database context to load settings from.</param>
+    /// <returns>A dictionary of all settings with their current values.</returns>
     public static Dictionary<string, object> LoadFromDb(Data.KanbanDbContext db)
     {
         var values = new Dictionary<string, object>();
@@ -51,6 +67,10 @@ public partial class AppearanceSettingsWindow : Window
         return values;
     }
 
+    /// <summary>
+    /// Applies font size and font family settings to application resources.
+    /// </summary>
+    /// <param name="values">The settings values to apply.</param>
     public static void ApplyToResources(Dictionary<string, object> values)
     {
         foreach (var (key, val) in values)
@@ -62,6 +82,11 @@ public partial class AppearanceSettingsWindow : Window
         }
     }
 
+    /// <summary>
+    /// Saves all settings to the database, applies them, and updates the theme.
+    /// </summary>
+    /// <param name="db">The database context to save settings to.</param>
+    /// <param name="values">The settings values to save.</param>
     public static void SaveToDb(Data.KanbanDbContext db, Dictionary<string, object> values)
     {
         foreach (var (key, val) in values)
@@ -71,7 +96,7 @@ public partial class AppearanceSettingsWindow : Window
         }
         ApplyToResources(values);
 
-        // Apply theme variant immediately and update custom brushes
+        // Apply theme variant and update custom color brushes
         var themeStr = values.TryGetValue("Theme", out var t) ? t.ToString() ?? "Light" : "Light";
         var theme = themeStr.ToLower() switch
         {
@@ -83,6 +108,10 @@ public partial class AppearanceSettingsWindow : Window
         App.ApplyThemeResources(theme);
     }
 
+    /// <summary>
+    /// Shows the appearance settings dialog as a modal dialog.
+    /// </summary>
+    /// <param name="owner">The owner window for modal dialog.</param>
     public static async System.Threading.Tasks.Task ShowAsync(Window owner)
     {
         var db = new Data.KanbanDbContext();

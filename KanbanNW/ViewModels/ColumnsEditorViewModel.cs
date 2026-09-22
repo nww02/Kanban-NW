@@ -1,8 +1,8 @@
-using System.Threading.Tasks;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using KanbanNW.Data;
@@ -10,18 +10,39 @@ using KanbanNW.Models;
 
 namespace KanbanNW.ViewModels;
 
+/// <summary>
+/// ViewModel for the column editor dialog (Config -> Columns).
+/// Supports adding, renaming, deleting, and reordering columns with Save/Cancel.
+/// </summary>
 public partial class ColumnsEditorViewModel : ViewModelBase
 {
     private readonly KanbanDbContext _db;
     private readonly int _projectId;
+
+    /// <summary>
+    /// Snapshot of original column names from database (key = column ID, value = original name).
+    /// Used to detect renames and track which columns were deleted/added.
+    /// </summary>
     private readonly Dictionary<int, string> _originalMap = new();
+
+    /// <summary>
+    /// Negative IDs assigned to newly added columns (not yet saved to DB).
+    /// </summary>
     private int _nextTempId = -1;
 
     public ObservableCollection<ColumnItem> Columns { get; } = new();
 
-    // Callback for confirmation dialog
+    /// <summary>
+    /// Callback to show confirmation dialogs (set by window code-behind).
+    /// </summary>
     public Func<string, Task<bool>>? ShowConfirmCallback { get; set; }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ColumnsEditorViewModel"/> class.
+    /// Loads columns from database and snapshots original names.
+    /// </summary>
+    /// <param name="db">The database context.</param>
+    /// <param name="projectId">The ID of the project whose columns to edit.</param>
     public ColumnsEditorViewModel(KanbanDbContext db, int projectId)
     {
         _db = db;
@@ -29,10 +50,14 @@ public partial class ColumnsEditorViewModel : ViewModelBase
         LoadFromDb();
     }
 
+    /// <summary>
+    /// Loads columns from database and snapshots their names.
+    /// </summary>
     private void LoadFromDb()
     {
         Columns.Clear();
         _originalMap.Clear();
+
         foreach (var c in _db.GetColumnsForProject(_projectId))
         {
             Columns.Add(new ColumnItem { Id = c.Id, Name = c.Name, IsSystem = c.IsSystem });
@@ -40,6 +65,9 @@ public partial class ColumnsEditorViewModel : ViewModelBase
         }
     }
 
+    /// <summary>
+    /// Adds a new column with a generated unique name.
+    /// </summary>
     [RelayCommand]
     private void AddColumn()
     {
@@ -56,6 +84,10 @@ public partial class ColumnsEditorViewModel : ViewModelBase
         });
     }
 
+    /// <summary>
+    /// Deletes a column after user confirmation.
+    /// </summary>
+    /// <param name="item">The column item to delete.</param>
     [RelayCommand]
     private async Task DeleteColumn(ColumnItem? item)
     {
@@ -71,6 +103,9 @@ public partial class ColumnsEditorViewModel : ViewModelBase
         Columns.Remove(item);
     }
 
+    /// <summary>
+    /// Commits all changes (adds, renames, deletes) to the database.
+    /// </summary>
     public void Save()
     {
         var currentIds = Columns.Where(c => c.Id > 0).Select(c => c.Id).ToHashSet();
@@ -80,7 +115,7 @@ public partial class ColumnsEditorViewModel : ViewModelBase
         {
             if (currentIds.Contains(kvp.Key)) continue;
 
-            // Move tasks to In Tray first
+            // Move tasks to In Tray before deleting column
             var inTray = _db.GetInTrayColumn(_projectId);
             if (inTray != null)
             {
@@ -94,10 +129,10 @@ public partial class ColumnsEditorViewModel : ViewModelBase
             _db.DeleteColumn(kvp.Key);
         }
 
-        // 2. Create new columns
+        // 2. Create new columns (those with temporary negative IDs)
         foreach (var item in Columns)
         {
-            if (item.Id >= 0) continue; // skip existing, only handle temp (negative) ids
+            if (item.Id >= 0) continue;
 
             var name = string.IsNullOrWhiteSpace(item.Name) ? "Untitled" : item.Name.Trim();
             var newId = _db.CreateColumn(name, _projectId);
@@ -107,7 +142,8 @@ public partial class ColumnsEditorViewModel : ViewModelBase
         // 3. Rename changed columns
         foreach (var item in Columns)
         {
-            if (item.Id <= 0) continue; // skip temps
+            if (item.Id <= 0) continue;
+
             if (!_originalMap.TryGetValue(item.Id, out var originalName)) continue;
             var trimmed = (item.Name ?? "").Trim();
             if (trimmed == originalName) continue;
@@ -117,6 +153,9 @@ public partial class ColumnsEditorViewModel : ViewModelBase
     }
 }
 
+/// <summary>
+/// Represents a single column in the editor list.
+/// </summary>
 public partial class ColumnItem : ObservableObject
 {
     public int Id { get; set; }

@@ -1,5 +1,5 @@
 using System;
-using System.Collections.ObjectModel;
+using System.Collections.ObjectCollection;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -8,15 +8,25 @@ using KanbanNW.Models;
 
 namespace KanbanNW.ViewModels;
 
+/// <summary>
+/// ViewModel for the category editor dialog (Config -> Categories).
+/// Allows renaming task types (e.g., "Red" -> "Urgent").
+/// </summary>
 public partial class CategoryEditorViewModel : ViewModelBase
 {
     private readonly KanbanDbContext _db;
 
     public ObservableCollection<CategoryItem> Categories { get; } = new();
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CategoryEditorViewModel"/> class.
+    /// </summary>
+    /// <param name="db">The database context.</param>
     public CategoryEditorViewModel(KanbanDbContext db)
     {
         _db = db;
+
+        // Load custom names from database
         var names = db.GetTaskTypeNames();
         foreach (var type in Enum.GetValues<TaskType>())
         {
@@ -25,6 +35,9 @@ public partial class CategoryEditorViewModel : ViewModelBase
         }
     }
 
+    /// <summary>
+    /// Saves all custom category names to the database.
+    /// </summary>
     public void Save()
     {
         foreach (var cat in Categories)
@@ -34,6 +47,9 @@ public partial class CategoryEditorViewModel : ViewModelBase
         }
     }
 
+    /// <summary>
+    /// Resets all category names to their default enum values.
+    /// </summary>
     [RelayCommand]
     private void ResetToDefaults()
     {
@@ -44,6 +60,9 @@ public partial class CategoryEditorViewModel : ViewModelBase
     }
 }
 
+/// <summary>
+/// Represents a single task type category in the editor.
+/// </summary>
 public partial class CategoryItem : ObservableObject
 {
     public TaskType Type { get; set; }

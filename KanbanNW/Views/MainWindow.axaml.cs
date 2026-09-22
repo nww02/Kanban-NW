@@ -14,8 +14,13 @@ using KanbanNW.ViewModels;
 
 namespace KanbanNW.Views;
 
+/// <summary>
+/// Main application window. Handles drag-and-drop, column/task management,
+/// and hosts the board UI.
+/// </summary>
 public partial class MainWindow : Window
 {
+    // Data formats for drag-and-drop operations
     private static readonly DataFormat<string> TaskIdFormat =
         DataFormat.CreateInProcessFormat<string>("kanban-task-id");
     private static readonly DataFormat<string> SourceColumnIdFormat =
@@ -42,6 +47,9 @@ public partial class MainWindow : Window
         InitializeComponent();
     }
 
+    /// <summary>
+    /// Called when the window is loaded. Sets up ViewModel callbacks.
+    /// </summary>
     protected override void OnLoaded(RoutedEventArgs e)
     {
         base.OnLoaded(e);
@@ -54,6 +62,9 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>
+    /// Opens the task editor dialog for creating or editing a task.
+    /// </summary>
     private async Task ShowTaskEditorAsync(TaskEditorViewModel editor)
     {
         var dialog = new TaskEditorWindow
@@ -64,11 +75,17 @@ public partial class MainWindow : Window
         await dialog.ShowDialog(this);
     }
 
+    /// <summary>
+    /// Shows a confirmation dialog with the given message.
+    /// </summary>
     private async Task<bool> ShowConfirmAsync(string message)
     {
         return await ConfirmDialog.ShowAsync(this, message);
     }
 
+    /// <summary>
+    /// Opens a file save dialog for CSV export.
+    /// </summary>
     private async Task<string?> ShowSaveFileAsync()
     {
         var options = new FilePickerSaveOptions
@@ -84,6 +101,9 @@ public partial class MainWindow : Window
         return file?.TryGetLocalPath();
     }
 
+    /// <summary>
+    /// Handles the Exit menu item click.
+    /// </summary>
     private void OnExitClick(object? sender, RoutedEventArgs e)
     {
         if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
@@ -96,6 +116,9 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>
+    /// Opens the Categories editor and refreshes the board.
+    /// </summary>
     private async void OnCategoriesClick(object? sender, RoutedEventArgs e)
     {
         await CategoryEditorWindow.ShowAsync(this, new Data.KanbanDbContext());
@@ -107,6 +130,9 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>
+    /// Toggles the "Show Deleted Tasks" setting.
+    /// </summary>
     private void OnToggleShowDeleted(object? sender, RoutedEventArgs e)
     {
         if (DataContext is MainViewModel vm)
@@ -115,11 +141,17 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>
+    /// Opens the Appearance settings dialog.
+    /// </summary>
     private async void OnAppearanceClick(object? sender, RoutedEventArgs e)
     {
         await AppearanceSettingsWindow.ShowAsync(this);
     }
 
+    /// <summary>
+    /// Opens the Columns editor and refreshes the board.
+    /// </summary>
     private async void OnColumnsClick(object? sender, RoutedEventArgs e)
     {
         if (DataContext is MainViewModel vm && vm.CurrentProjectId > 0)
@@ -129,6 +161,9 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>
+    /// Opens the Projects editor and refreshes the board.
+    /// </summary>
     private async void OnProjectsClick(object? sender, RoutedEventArgs e)
     {
         await ProjectEditorWindow.ShowAsync(this, new Data.KanbanDbContext());
@@ -143,16 +178,25 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>
+    /// Opens the Help window.
+    /// </summary>
     private async void OnHelpClick(object? sender, RoutedEventArgs e)
     {
         await HelpWindow.ShowAsync(this);
     }
 
+    /// <summary>
+    /// Opens the About window.
+    /// </summary>
     private async void OnAboutClick(object? sender, RoutedEventArgs e)
     {
         await AboutWindow.ShowAsync(this);
     }
 
+    /// <summary>
+    /// Handles clicks on project tabs at the top of the window.
+    /// </summary>
     private void OnProjectTabClick(object? sender, PointerPressedEventArgs e)
     {
         if (sender is Border border && border.Tag is int projectId)
@@ -164,6 +208,9 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>
+    /// Handles pointer press on a task card. Initiates drag-and-drop.
+    /// </summary>
     private async void OnTaskPointerPressed(object? sender, PointerPressedEventArgs e)
     {
         if (sender is not Border border || border.DataContext is not TaskViewModel task)
@@ -231,6 +278,10 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>
+    /// Called continuously during drag. Updates the ghost position and
+    /// shows a placeholder where the task would be dropped.
+    /// </summary>
     private void OnColumnDragOver(object? sender, DragEventArgs e)
     {
         // Move the drag ghost to follow the cursor
@@ -402,6 +453,7 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// Calculates the insert index for a drop position within a ListBox.
+    /// Uses the vertical midpoint of each task to determine insertion point.
     /// </summary>
     private static int CalculateInsertIndex(ListBox listBox, Point dropPos)
     {
@@ -465,6 +517,7 @@ public partial class MainWindow : Window
 
             if (DataContext is MainViewModel vm)
             {
+                // Append to end of column
                 vm.MoveTaskToColumnAtPosition(taskId, targetCol.Id, int.MaxValue);
             }
         }

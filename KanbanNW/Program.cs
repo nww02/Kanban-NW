@@ -1,23 +1,29 @@
-﻿using Avalonia;
+using Avalonia;
 using System;
 
 namespace KanbanNW;
 
+/// <summary>
+/// Application entry point. Configures and starts the Avalonia application.
+/// </summary>
 sealed class Program
 {
-    // Initialization code. Don't use any Avalonia, third-party APIs or any
-    // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
-    // yet and stuff might break.
+    /// <summary>
+    /// Main entry point. STAThread is required for Avalonia on Windows.
+    /// </summary>
     [STAThread]
     public static void Main(string[] args) => BuildAvaloniaApp()
         .StartWithClassicDesktopLifetime(args);
 
-    // Avalonia configuration, don't remove; also used by visual designer.
+    /// <summary>
+    /// Builds and configures the Avalonia application.
+    /// Also used by the visual designer at design-time.
+    /// </summary>
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
-            .UsePlatformDetect()
+            .UsePlatformDetect()             // Auto-detect OS and load appropriate backend (Win32, X11, etc.)
 #if DEBUG
-            .WithDeveloperTools()
+            .WithDeveloperTools()           // Enable developer tools (F12) in debug builds
 #endif
-            .LogToTrace();
+            .LogToTrace();                  // Log Avalonia internal messages to trace output
 }

@@ -6,10 +6,18 @@ using KanbanNW.Models;
 
 namespace KanbanNW.Data;
 
+/// <summary>
+/// Database context for Kanban-NW. Wraps a SQLite connection and provides
+/// CRUD operations for projects, columns, tasks, comments, settings, and categories.
+/// </summary>
 public class KanbanDbContext : IDisposable
 {
     private readonly SqliteConnection _connection;
 
+    /// <summary>
+    /// Opens connection to the SQLite database file in LocalApplicationData/KanbanNW/kanban.db.
+    /// Creates tables and seeds default data if they don't exist.
+    /// </summary>
     public KanbanDbContext()
     {
         var dbPath = System.IO.Path.Combine(
@@ -21,7 +29,7 @@ public class KanbanDbContext : IDisposable
         _connection = new SqliteConnection($"Data Source={dbPath}");
         _connection.Open();
 
-        // Enable foreign key cascade deletes
+        // Enable foreign key cascade deletes (deleting a column deletes its tasks)
         using (var pragmaCmd = _connection.CreateCommand())
         {
             pragmaCmd.CommandText = "PRAGMA foreign_keys = ON;";
@@ -31,6 +39,10 @@ public class KanbanDbContext : IDisposable
         Initialize();
     }
 
+    /// <summary>
+    /// Creates database tables and seeds default data on first run.
+    /// Also handles schema migrations for existing databases.
+    /// </summary>
     private void Initialize()
     {
         using var cmd = _connection.CreateCommand();
@@ -83,7 +95,8 @@ public class KanbanDbContext : IDisposable
         """;
         cmd.ExecuteNonQuery();
 
-        // Migrate: add ProjectId column if it doesn't exist (legacy databases)
+        // --- Schema migrations for existing databases ---
+        // Add EstimatedDays column if missing (legacy databases)
         if (!HasColumn("Tasks", "EstimatedDays"))
         {
             using var estMigrate = _connection.CreateCommand();
@@ -91,6 +104,7 @@ public class KanbanDbContext : IDisposable
             estMigrate.ExecuteNonQuery();
         }
 
+        // Add Color column to Projects if missing
         if (!HasColumn("Projects", "Color"))
         {
             using var colorMigrate = _connection.CreateCommand();
@@ -98,6 +112,7 @@ public class KanbanDbContext : IDisposable
             colorMigrate.ExecuteNonQuery();
         }
 
+        // Add ProjectId column to Columns if missing
         if (!HasColumn("Columns", "ProjectId"))
         {
             using var migrateCmd = _connection.CreateCommand();
@@ -105,7 +120,7 @@ public class KanbanDbContext : IDisposable
             migrateCmd.ExecuteNonQuery();
         }
 
-        // Seed a default project if none exists
+        // Seed default project if none exists
         using var projectCountCmd = _connection.CreateCommand();
         projectCountCmd.CommandText = "SELECT COUNT(*) FROM \"Projects\"";
         var projectCount = (long)projectCountCmd.ExecuteScalar()!;
@@ -115,14 +130,14 @@ public class KanbanDbContext : IDisposable
             seedProject.CommandText = "INSERT INTO \"Projects\" (Name) VALUES ('Default'); SELECT last_insert_rowid();";
             var defaultProjectId = Convert.ToInt32(seedProject.ExecuteScalar());
 
-            // Migrate existing columns (where ProjectId=0) to the default project
+            // Migrate existing columns (ProjectId=0) to the default project
             using var updateCols = _connection.CreateCommand();
             updateCols.CommandText = "UPDATE \"Columns\" SET ProjectId = @pid WHERE ProjectId = 0";
             updateCols.Parameters.AddWithValue("@pid", defaultProjectId);
             updateCols.ExecuteNonQuery();
         }
 
-        // Seed system columns if empty for the default project
+        // Seed system columns (In Tray, Done) for default project
         var defaultProject = GetDefaultProject();
         if (defaultProject != null)
         {
@@ -161,6 +176,9 @@ public class KanbanDbContext : IDisposable
         }
     }
 
+    /// <summary>
+    /// Checks if a column exists in a table (used for schema migrations).
+    /// </summary>
     private bool HasColumn(string table, string column)
     {
         using var cmd = _connection.CreateCommand();
@@ -174,6 +192,9 @@ public class KanbanDbContext : IDisposable
         return false;
     }
 
+    /// <summary>
+    /// Seeds the TaskTypeNames table with default enum names.
+    /// </summary>
     private void SeedTaskTypeNames()
     {
         foreach (var type in Enum.GetValues<TaskType>())
@@ -186,8 +207,11 @@ public class KanbanDbContext : IDisposable
         }
     }
 
+    // ============================
     // Project CRUD
+    // ============================
 
+    /// <summary>Gets all projects ordered by ID.</summary>
     public List<KanbanProject> GetAllProjects()
     {
         var projects = new List<KanbanProject>();
@@ -206,6 +230,7 @@ public class KanbanDbContext : IDisposable
         return projects;
     }
 
+    /// <summary>Gets the first project (default).</summary>
     public KanbanProject? GetDefaultProject()
     {
         using var cmd = _connection.CreateCommand();
@@ -216,17 +241,18 @@ public class KanbanDbContext : IDisposable
         return null;
     }
 
+    /// <summary>Creates a new project and seeds its system columns.</summary>
     public int CreateProject(string name)
     {
         using var cmd = _connection.CreateCommand();
         cmd.CommandText = "INSERT INTO \"Projects\" (Name) VALUES (@name); SELECT last_insert_rowid();";
         cmd.Parameters.AddWithValue("@name", name);
         var result = Convert.ToInt32(cmd.ExecuteScalar());
-        // Seed system columns for the new project
         SeedProjectColumns(result);
         return result;
     }
 
+    /// <summary>Updates a project's name and color.</summary>
     public void UpdateProject(int projectId, string name, string color)
     {
         using var cmd = _connection.CreateCommand();
@@ -237,13 +263,12 @@ public class KanbanDbContext : IDisposable
         cmd.ExecuteNonQuery();
     }
 
+    /// <summary>Deletes a project and all its columns/tasks (if not the last project).</summary>
     public void DeleteProject(int projectId)
     {
-        // Don't allow deleting the last project
         var count = GetAllProjects().Count;
-        if (count <= 1) return;
+        if (count <= 1) return; // Never delete the last project
 
-        // Delete all columns (and cascaded tasks) for this project
         using var cmd = _connection.CreateCommand();
         cmd.CommandText = "DELETE FROM \"Columns\" WHERE ProjectId = @pid";
         cmd.Parameters.AddWithValue("@pid", projectId);
@@ -255,6 +280,9 @@ public class KanbanDbContext : IDisposable
         delCmd.ExecuteNonQuery();
     }
 
+    /// <summary>
+    /// Seeds In Tray, Done, and Deleted Tasks columns for a new project.
+    /// </summary>
     public void SeedProjectColumns(int projectId)
     {
         using var countCmd = _connection.CreateCommand();
@@ -281,7 +309,6 @@ public class KanbanDbContext : IDisposable
             seed2.ExecuteNonQuery();
         }
 
-        // Also create a deleted tasks column for this project
         using var delCountCmd = _connection.CreateCommand();
         delCountCmd.CommandText = "SELECT COUNT(*) FROM \"Columns\" WHERE ProjectId = @pid AND \"Order\" = 1000";
         delCountCmd.Parameters.AddWithValue("@pid", projectId);
@@ -295,8 +322,11 @@ public class KanbanDbContext : IDisposable
         }
     }
 
+    // ============================
     // Column CRUD
+    // ============================
 
+    /// <summary>Gets all columns for a project ordered by display order.</summary>
     public List<KanbanColumn> GetColumnsForProject(int projectId)
     {
         var columns = new List<KanbanColumn>();
@@ -305,12 +335,11 @@ public class KanbanDbContext : IDisposable
         cmd.Parameters.AddWithValue("@pid", projectId);
         using var reader = cmd.ExecuteReader();
         while (reader.Read())
-        {
             columns.Add(ReadColumn(reader));
-        }
         return columns;
     }
 
+    /// <summary>Gets a single column by ID.</summary>
     public KanbanColumn? GetColumnById(int id)
     {
         using var cmd = _connection.CreateCommand();
@@ -318,15 +347,13 @@ public class KanbanDbContext : IDisposable
         cmd.Parameters.AddWithValue("@id", id);
         using var reader = cmd.ExecuteReader();
         if (reader.Read())
-        {
             return ReadColumn(reader);
-        }
         return null;
     }
 
+    /// <summary>Creates a new user column before the Done column.</summary>
     public int CreateColumn(string name, int projectId)
     {
-        // Place before "Done" (order 999)
         using var cmd = _connection.CreateCommand();
         cmd.CommandText = """
             INSERT INTO "Columns" ("Name", "Order", "IsSystem", "ProjectId")
@@ -339,6 +366,7 @@ public class KanbanDbContext : IDisposable
         return Convert.ToInt32(result);
     }
 
+    /// <summary>Renames a user column (system columns cannot be renamed).</summary>
     public void RenameColumn(int columnId, string newName)
     {
         using var cmd = _connection.CreateCommand();
@@ -348,6 +376,7 @@ public class KanbanDbContext : IDisposable
         cmd.ExecuteNonQuery();
     }
 
+    /// <summary>Deletes a user column (system columns cannot be deleted).</summary>
     public void DeleteColumn(int columnId)
     {
         using var cmd = _connection.CreateCommand();
@@ -356,8 +385,11 @@ public class KanbanDbContext : IDisposable
         cmd.ExecuteNonQuery();
     }
 
+    // ============================
     // Task CRUD
+    // ============================
 
+    /// <summary>Gets all tasks for a column ordered by display order.</summary>
     public List<KanbanTask> GetTasksForColumn(int columnId)
     {
         var tasks = new List<KanbanTask>();
@@ -369,12 +401,11 @@ public class KanbanDbContext : IDisposable
         cmd.Parameters.AddWithValue("@cid", columnId);
         using var reader = cmd.ExecuteReader();
         while (reader.Read())
-        {
             tasks.Add(ReadTask(reader));
-        }
         return tasks;
     }
 
+    /// <summary>Gets a single task by ID.</summary>
     public KanbanTask? GetTaskById(int id)
     {
         using var cmd = _connection.CreateCommand();
@@ -389,6 +420,7 @@ public class KanbanDbContext : IDisposable
         return null;
     }
 
+    /// <summary>Creates a new task at the end of the specified column.</summary>
     public int CreateTask(KanbanTask task)
     {
         using var cmd = _connection.CreateCommand();
@@ -410,6 +442,7 @@ public class KanbanDbContext : IDisposable
         return Convert.ToInt32(result);
     }
 
+    /// <summary>Updates all fields of an existing task.</summary>
     public void UpdateTask(KanbanTask task)
     {
         using var cmd = _connection.CreateCommand();
@@ -430,6 +463,7 @@ public class KanbanDbContext : IDisposable
         cmd.ExecuteNonQuery();
     }
 
+    /// <summary>Moves a task to a different column with a new order.</summary>
     public void MoveTaskToColumn(int taskId, int newColumnId, int newOrder)
     {
         using var cmd = _connection.CreateCommand();
@@ -440,6 +474,7 @@ public class KanbanDbContext : IDisposable
         cmd.ExecuteNonQuery();
     }
 
+    /// <summary>Deletes a task (hard delete).</summary>
     public void DeleteTask(int taskId)
     {
         using var cmd = _connection.CreateCommand();
@@ -448,6 +483,7 @@ public class KanbanDbContext : IDisposable
         cmd.ExecuteNonQuery();
     }
 
+    /// <summary>Gets the In Tray column for a project.</summary>
     public KanbanColumn? GetInTrayColumn(int projectId)
     {
         using var cmd = _connection.CreateCommand();
@@ -455,12 +491,11 @@ public class KanbanDbContext : IDisposable
         cmd.Parameters.AddWithValue("@pid", projectId);
         using var reader = cmd.ExecuteReader();
         if (reader.Read())
-        {
             return ReadColumn(reader);
-        }
         return null;
     }
 
+    /// <summary>Gets the Done column for a project.</summary>
     public KanbanColumn? GetDoneColumn(int projectId)
     {
         using var cmd = _connection.CreateCommand();
@@ -468,14 +503,15 @@ public class KanbanDbContext : IDisposable
         cmd.Parameters.AddWithValue("@pid", projectId);
         using var reader = cmd.ExecuteReader();
         if (reader.Read())
-        {
             return ReadColumn(reader);
-        }
         return null;
     }
 
+    // ============================
     // Deleted Tasks column
+    // ============================
 
+    /// <summary>Gets or creates the Deleted Tasks column for a project.</summary>
     public KanbanColumn GetOrCreateDeletedColumn(int projectId)
     {
         using var checkCmd = _connection.CreateCommand();
@@ -483,9 +519,7 @@ public class KanbanDbContext : IDisposable
         checkCmd.Parameters.AddWithValue("@pid", projectId);
         using var reader = checkCmd.ExecuteReader();
         if (reader.Read())
-        {
             return ReadColumn(reader);
-        }
         reader.Close();
 
         using var createCmd = _connection.CreateCommand();
@@ -495,6 +529,7 @@ public class KanbanDbContext : IDisposable
         return new KanbanColumn { Id = id, Name = "Deleted Tasks", Order = 1000, IsSystem = true, ProjectId = projectId };
     }
 
+    /// <summary>Moves a task to the Deleted Tasks column.</summary>
     public void MoveTaskToDeletedColumn(int taskId, int projectId)
     {
         var deletedCol = GetOrCreateDeletedColumn(projectId);
@@ -511,6 +546,7 @@ public class KanbanDbContext : IDisposable
         cmd.ExecuteNonQuery();
     }
 
+    /// <summary>Gets the count of tasks in the Deleted Tasks column.</summary>
     public int GetDeletedTaskCount(int projectId)
     {
         var deletedCol = GetOrCreateDeletedColumn(projectId);
@@ -520,6 +556,7 @@ public class KanbanDbContext : IDisposable
         return Convert.ToInt32(cmd.ExecuteScalar());
     }
 
+    /// <summary>Permanently deletes all tasks in the Deleted Tasks column.</summary>
     public void EmptyDeletedColumn(int projectId)
     {
         var deletedCol = GetOrCreateDeletedColumn(projectId);
@@ -529,8 +566,11 @@ public class KanbanDbContext : IDisposable
         cmd.ExecuteNonQuery();
     }
 
+    // ============================
     // TaskTypeNames CRUD
+    // ============================
 
+    /// <summary>Gets all custom task type names.</summary>
     public Dictionary<TaskType, string> GetTaskTypeNames()
     {
         var names = new Dictionary<TaskType, string>();
@@ -540,13 +580,12 @@ public class KanbanDbContext : IDisposable
         while (reader.Read())
         {
             if (Enum.TryParse<TaskType>(reader.GetString(0), out var type))
-            {
                 names[type] = reader.GetString(1);
-            }
         }
         return names;
     }
 
+    /// <summary>Saves a custom name for a task type.</summary>
     public void SaveTaskTypeName(TaskType type, string customName)
     {
         using var cmd = _connection.CreateCommand();
@@ -556,8 +595,11 @@ public class KanbanDbContext : IDisposable
         cmd.ExecuteNonQuery();
     }
 
+    // ============================
     // Comment CRUD
+    // ============================
 
+    /// <summary>Gets all comments for a task ordered by creation time.</summary>
     public List<Comment> GetComments(int taskId)
     {
         var comments = new List<Comment>();
@@ -578,6 +620,7 @@ public class KanbanDbContext : IDisposable
         return comments;
     }
 
+    /// <summary>Adds a comment to the database.</summary>
     public void AddComment(Comment comment)
     {
         using var cmd = _connection.CreateCommand();
@@ -592,6 +635,7 @@ public class KanbanDbContext : IDisposable
         comment.Id = Convert.ToInt32(result);
     }
 
+    /// <summary>Converts a SqliteDataReader row to a KanbanTask model.</summary>
     private static KanbanTask ReadTask(SqliteDataReader reader)
     {
         return new KanbanTask
@@ -609,6 +653,7 @@ public class KanbanDbContext : IDisposable
         };
     }
 
+    /// <summary>Converts a SqliteDataReader row to a KanbanColumn model.</summary>
     private static KanbanColumn ReadColumn(SqliteDataReader reader)
     {
         return new KanbanColumn
@@ -621,14 +666,20 @@ public class KanbanDbContext : IDisposable
         };
     }
 
+    /// <summary>
+    /// Closes and disposes the database connection.
+    /// </summary>
     public void Dispose()
     {
         _connection?.Close();
         _connection?.Dispose();
     }
 
+    // ============================
     // Settings CRUD
+    // ============================
 
+    /// <summary>Saves a setting (key-value pair) to the database.</summary>
     public void SaveSetting(string key, string value)
     {
         using var cmd = _connection.CreateCommand();
@@ -638,6 +689,7 @@ public class KanbanDbContext : IDisposable
         cmd.ExecuteNonQuery();
     }
 
+    /// <summary>Gets a setting value by key.</summary>
     public string? GetSetting(string key, string? defaultValue = null)
     {
         using var cmd = _connection.CreateCommand();
@@ -647,6 +699,7 @@ public class KanbanDbContext : IDisposable
         return result != null ? result.ToString() : defaultValue;
     }
 
+    /// <summary>Gets all settings as a dictionary.</summary>
     public Dictionary<string, string> GetAllSettings()
     {
         var dict = new Dictionary<string, string>();

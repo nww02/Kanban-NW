@@ -1,10 +1,18 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Version>1.0.2</Version>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>Kanban-NW.snk</AssemblyOriginatorKeyFile>
+    <PublicSign>true</PublicSign>
+    <RootNamespace>com.darkbluemonkey.KanbanNW</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <Company>DarkBlueMonkey.com</Company>
+    <AssemblyVersion>1.0.2</AssemblyVersion>
+    <FileVersion>1.0.2</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -48,6 +56,11 @@
       <_RemoveDlls Include="$(PublishDir)Avalonia.Remote.Protocol.dll" />
     </ItemGroup>
     <Delete Files="@(_RemoveDlls)" />
+    <!-- Strip PDB debug symbols from publish output -->
+    <ItemGroup>
+      <_Pdbs Include="$(PublishDir)*.pdb" />
+    </ItemGroup>
+    <Delete Files="@(_Pdbs)" />
   </Target>
 
   <!-- ZIP the publish folder as KanbanNW-<version>-<OS>-<arch>.zip -->

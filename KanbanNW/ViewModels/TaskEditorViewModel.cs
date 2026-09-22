@@ -9,6 +9,10 @@ using KanbanNW.Models;
 
 namespace KanbanNW.ViewModels;
 
+/// <summary>
+/// ViewModel for the task editor dialog (create/edit task).
+/// Handles validation, comments, and saving to database.
+/// </summary>
 public partial class TaskEditorViewModel : ViewModelBase
 {
     private readonly KanbanDbContext _db;
@@ -39,42 +43,69 @@ public partial class TaskEditorViewModel : ViewModelBase
     [ObservableProperty]
     private bool _isSaved;
 
-    // Set by the window code-behind so Save/Cancel can close the dialog
+    /// <summary>
+    /// Callback to close the dialog window. Set by the window code-behind.
+    /// </summary>
     public Action? CloseAction { get; set; }
 
+    /// <summary>
+    /// The task that was created or updated (set on Save).
+    /// </summary>
     public KanbanTask? CreatedTask { get; private set; }
+
+    /// <summary>
+    /// Comments associated with this task (loaded from DB or held in memory for new tasks).
+    /// </summary>
     public ObservableCollection<Comment> Comments { get; } = new();
+
+    /// <summary>
+    /// True if editing an existing task (vs creating new).
+    /// </summary>
     public bool IsEditing => _existingTaskId.HasValue;
 
-    // For the type combo box (shows custom display names)
+    /// <summary>
+    /// Available task types for the combo box (with custom display names).
+    /// </summary>
     public TaskTypeDisplay[] TaskTypes { get; }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TaskEditorViewModel"/> class.
+    /// </summary>
+    /// <param name="db">The database context.</param>
+    /// <param name="existingTask">Existing task to edit, or null for new task.</param>
+    /// <param name="defaultColumnId">Column ID to assign the new task to.</param>
     public TaskEditorViewModel(KanbanDbContext db, KanbanTask? existingTask, int defaultColumnId)
     {
         _db = db;
         _defaultColumnId = defaultColumnId;
         _existingTaskId = existingTask?.Id;
 
-        // Load custom type display names from the cache
+        // Load task types with custom display names from cache
         TaskTypes = Enum.GetValues<TaskType>()
             .Select(t => new TaskTypeDisplay { Type = t, DisplayName = TaskTypeNameCache.GetDisplayName(t) })
             .ToArray();
 
         if (existingTask != null)
         {
+            // Editing existing task: load its data
             Title = existingTask.Title;
             DueDate = existingTask.DueDate.HasValue ? new DateTimeOffset(existingTask.DueDate.Value) : null;
             Description = existingTask.Description;
             Type = existingTask.Type;
+
+            // Load existing comments from database
             var comments = db.GetComments(existingTask.Id);
             foreach (var c in comments)
                 Comments.Add(c);
         }
 
-        // Set selected type item to match the current Type
+        // Set combo box selection to match current Type
         SelectedTypeItem = TaskTypes.FirstOrDefault(t => t.Type == Type) ?? TaskTypes.FirstOrDefault();
     }
 
+    /// <summary>
+    /// Saves the task to the database (create or update).
+    /// </summary>
     [RelayCommand]
     private void Save()
     {
@@ -97,15 +128,17 @@ public partial class TaskEditorViewModel : ViewModelBase
 
         if (_existingTaskId.HasValue)
         {
+            // Editing existing task: preserve its column
             task.ColumnId = _db.GetTaskById(task.Id)?.ColumnId ?? _defaultColumnId;
             _db.UpdateTask(task);
         }
         else
         {
+            // Creating new task
             var id = _db.CreateTask(task);
             task.Id = id;
 
-            // Add a "Task Created" comment
+            // Add "Task Created" comment
             var createdComment = new Comment
             {
                 Text = "Task created",
@@ -131,6 +164,9 @@ public partial class TaskEditorViewModel : ViewModelBase
         CloseAction?.Invoke();
     }
 
+    /// <summary>
+    /// Cancels the dialog without saving.
+    /// </summary>
     [RelayCommand]
     private void Cancel()
     {
@@ -138,21 +174,27 @@ public partial class TaskEditorViewModel : ViewModelBase
         CloseAction?.Invoke();
     }
 
+    /// <summary>
+    /// Clears the due date.
+    /// </summary>
     [RelayCommand]
     private void ClearDueDate()
     {
         DueDate = null;
     }
 
+    /// <summary>
+    /// Adds a comment (saves to DB if editing, holds in memory if creating).
+    /// </summary>
     [RelayCommand]
     private void AddComment()
     {
         if (string.IsNullOrWhiteSpace(NewCommentText))
             return;
 
-        // If editing, save directly to DB; if creating, hold in memory until save
         if (_existingTaskId.HasValue)
         {
+            // Editing: save comment directly to database
             var comment = new Comment
             {
                 Text = NewCommentText.Trim(),
@@ -164,13 +206,12 @@ public partial class TaskEditorViewModel : ViewModelBase
         }
         else
         {
-            // For new tasks, comments are added after creation
-            // Hold in memory for now
+            // Creating: hold comment in memory until task is saved
             Comments.Add(new Comment
             {
                 Text = NewCommentText.Trim(),
                 CreatedAt = DateTime.Now,
-                TaskId = 0
+                TaskId = 0  // Will be updated after task creation
             });
         }
 
