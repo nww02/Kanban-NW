@@ -23,3 +23,7 @@ and need to do something unusual.
 
 This is made public with no apologies, and no guarantees.  If you like it, enjoy it.
 :)
+
+p.s. btw - Buying a "Digital Certificate" for code signing a windows binary costs between $100 and $300 a year.  
+This is just a hobby, so I'm not going to shell out $100 for something people probably won't use.  Either turn 
+your Windows SmartScreen down, build it yourself, or opt out of the rat race and come join Linux.  
